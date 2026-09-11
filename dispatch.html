@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+<title>Dispatch — Send Alert</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Inter:wght@400;500;600;700&display=swap');
+
+  :root {
+    --bg: #14171A;
+    --panel: #1C2024;
+    --border: #3A3F44;
+    --text: #EDEEF0;
+    --text-dim: #9AA0A6;
+    --red: #D7263D;
+    --red-dim: #5A1620;
+    --amber: #F2A93B;
+    --amber-dim: #4A3A15;
+    --blue: #3B6EF2;
+    --blue-dim: #172A55;
+    --green: #3FA34D;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', system-ui, sans-serif;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  header {
+    padding: 20px 20px 16px;
+    border-bottom: 3px solid var(--border);
+  }
+
+  header .agency {
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-dim);
+    letter-spacing: 0.02em;
+    margin: 0 0 2px;
+  }
+
+  header h1 {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 700;
+    font-size: 34px;
+    line-height: 1;
+    margin: 0;
+    letter-spacing: 0.01em;
+  }
+
+  main {
+    flex: 1;
+    padding: 20px 20px 150px;
+    max-width: 480px;
+    width: 100%;
+    margin: 0 auto;
+  }
+
+  .field {
+    margin-bottom: 22px;
+  }
+
+  .field label {
+    display: block;
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: var(--text-dim);
+  }
+
+  .field input,
+  .field textarea,
+  .field select {
+    width: 100%;
+    background: var(--panel);
+    border: 2px solid var(--border);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    font-size: 17px;
+    padding: 14px 12px;
+    border-radius: 2px;
+  }
+
+  .field select {
+    appearance: none;
+    -webkit-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='9'%3E%3Cpath d='M1 1l6 6 6-6' stroke='%239AA0A6' stroke-width='2' fill='none' fill-rule='evenodd'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+    padding-right: 36px;
+  }
+
+  .field input:focus,
+  .field textarea:focus,
+  .field select:focus {
+    outline: none;
+    border-color: var(--amber);
+  }
+
+  .field textarea {
+    resize: vertical;
+    min-height: 70px;
+  }
+
+  .priority-chips {
+    display: flex;
+    gap: 8px;
+  }
+
+  .priority-chip {
+    flex: 1;
+    border: 2px solid var(--border);
+    background: var(--panel);
+    color: var(--text-dim);
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 700;
+    font-size: 18px;
+    letter-spacing: 0.03em;
+    padding: 10px 0;
+    border-radius: 2px;
+    cursor: pointer;
+  }
+
+  .priority-chip[aria-pressed="true"][data-p="P1"] {
+    background: var(--red-dim); border-color: var(--red); color: #fff;
+  }
+  .priority-chip[aria-pressed="true"][data-p="P2"] {
+    background: var(--amber-dim); border-color: var(--amber); color: #fff;
+  }
+  .priority-chip[aria-pressed="true"][data-p="P3"] {
+    background: var(--blue-dim); border-color: var(--blue); color: #fff;
+  }
+
+  .units-input {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .unit-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--panel);
+    border: 2px solid var(--border);
+    padding: 6px 10px;
+    border-radius: 2px;
+    font-size: 15px;
+  }
+
+  .unit-tag button {
+    background: none;
+    border: none;
+    color: var(--text-dim);
+    font-size: 16px;
+    cursor: pointer;
+    padding: 0;
+    line-height: 1;
+  }
+
+  .hint {
+    font-size: 13px;
+    color: var(--text-dim);
+    margin-top: 6px;
+  }
+
+  footer {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 16px 20px calc(16px + env(safe-area-inset-bottom));
+    background: linear-gradient(to top, var(--bg) 60%, transparent);
+  }
+
+  #sendBtn {
+    max-width: 480px;
+    margin: 0 auto;
+    display: block;
+    width: 100%;
+    background: var(--red);
+    color: #fff;
+    border: none;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 700;
+    font-size: 26px;
+    letter-spacing: 0.03em;
+    padding: 18px 0;
+    border-radius: 2px;
+    cursor: pointer;
+  }
+
+  #sendBtn:disabled {
+    background: var(--border);
+    color: var(--text-dim);
+  }
+
+  #status {
+    max-width: 480px;
+    margin: 10px auto 0;
+    font-size: 14px;
+    text-align: center;
+    min-height: 18px;
+  }
+
+  #status.ok { color: var(--green); }
+  #status.err { color: var(--red); }
+</style>
+</head>
+<body>
+
+<header>
+  <p class="agency">Blain County Fire — Dispatch</p>
+  <h1>New Call</h1>
+</header>
+
+<main>
+  <div class="field">
+    <label for="callType">Call type (from run card)</label>
+    <select id="callType"></select>
+  </div>
+
+  <div class="field">
+    <label>Priority</label>
+    <div class="priority-chips" id="priorityChips">
+      <button type="button" class="priority-chip" data-p="P1">P1</button>
+      <button type="button" class="priority-chip" data-p="P2">P2</button>
+      <button type="button" class="priority-chip" data-p="P3">P3</button>
+    </div>
+    <p class="hint">Set automatically from the run card — tap to override.</p>
+  </div>
+
+  <div class="field">
+    <label for="address">Address</label>
+    <input id="address" type="text" placeholder="123 Main St, Blain" autocomplete="off">
+  </div>
+
+  <div class="field">
+    <label for="notes">Notes from dispatch</label>
+    <textarea id="notes" placeholder="Structure fire, smoke showing, occupants out..."></textarea>
+  </div>
+
+  <div class="field">
+    <label for="unitInput">Units toned</label>
+    <div class="units-input" id="unitTags"></div>
+    <input id="unitInput" type="text" placeholder="Type a unit and press Enter" autocomplete="off" style="margin-top:8px;">
+    <p class="hint">Pre-filled from the run card for this call type — edit as needed.</p>
+  </div>
+</main>
+
+<footer>
+  <button id="sendBtn">SEND ALERT</button>
+  <p id="status"></p>
+</footer>
+
+<script>
+  // Pulled from the department run card. Units/priority/notes here are the
+  // defaults dispatch can still edit per-call before sending.
+  const RUN_CARDS = [
+    { type: 'Fire Residential',       units: ['ENGINE', 'RESCUE', 'TANKER', 'COMMAND'],              priority: 'P1', notes: '' },
+    { type: 'Working Fire',           units: ['RE-TONE', 'ENGINE', 'BRUSH', 'UTILITY', 'COMMAND'],    priority: 'P1', notes: 'ALL CALL' },
+    { type: 'Fire Commercial',        units: ['ENGINE', 'ENGINE', 'LADDER', 'MEDIC', 'COMMAND'],      priority: 'P1', notes: '' },
+    { type: 'Working Commercial',     units: ['RE-TONE', 'ENGINE', 'BRUSH', 'UTILITY', 'COMMAND'],    priority: 'P2', notes: 'ALL CALL' },
+    { type: 'Alarm Residential',      units: ['ENGINE', 'TANKER'],                                    priority: 'P2', notes: '' },
+    { type: 'Alarm CO Residential',   units: ['ENGINE', 'RESCUE'],                                    priority: 'P3', notes: '' },
+    { type: 'Alarm Commercial',       units: ['ENGINE', 'TANKER', 'COMMAND'],                         priority: 'P3', notes: '' },
+    { type: 'Alarm CO Commercial',    units: ['ENGINE', 'TANKER', 'RESCUE', 'COMMAND'],                priority: 'P3', notes: '' },
+    { type: 'Electrical Hazard',      units: ['ENGINE OR UTILITY'],                                   priority: 'P2', notes: '' },
+    { type: 'Gas Leak',               units: ['ENGINE'],                                               priority: 'P2', notes: '' },
+    { type: 'Outside Fire',           units: ['ENGINE OR BRUSH'],                                     priority: 'P2', notes: '' },
+    { type: 'Smoke Investigation',    units: ['ENGINE', 'TANKER', 'COMMAND'],                         priority: 'P1', notes: '' },
+    { type: 'Vehicle Fire',           units: ['ENGINE', 'TANKER', 'COMMAND'],                         priority: 'P1', notes: '' },
+    { type: 'Hazmat',                 units: ['RESCUE', 'ENGINE', 'TANKER', 'COMMAND'],               priority: 'P1', notes: '' },
+    { type: 'Tech Rescue',            units: ['RESCUE', 'ENGINE', 'TANKER', 'COMMAND'],               priority: 'P1', notes: '' },
+    { type: 'Collapse',               units: ['RESCUE', 'ENGINE', 'TANKER', 'COMMAND'],               priority: '',   notes: '' },
+    { type: 'Search & Rescue - Water', units: ['RESCUE', 'ENGINE', 'BRUSH', 'UTILITY', 'COMMAND'],    priority: 'P1', notes: '' },
+    { type: 'MVA ATV/Offroad/UTV',    units: ['RESCUE', 'BRUSH', 'UTILITY', 'COMMAND'],               priority: '',   notes: 'Tanker/Engine if needed' },
+    { type: 'MVC',                    units: ['ENGINE', 'RESCUE', 'COMMAND'],                         priority: 'P1', notes: '' },
+    { type: 'MVC Entrapment',         units: ['RESCUE', 'ENGINE', 'UTILITY', 'COMMAND'],              priority: 'P1', notes: '' },
+  ];
+
+  const callTypeSelect = document.getElementById('callType');
+  callTypeSelect.innerHTML = '<option value="">Select call type…</option>' +
+    RUN_CARDS.map(rc => `<option value="${rc.type}">${rc.type}</option>`).join('');
+
+  const priorityChips = document.getElementById('priorityChips');
+  let selectedPriority = '';
+
+  function setPriority(p) {
+    selectedPriority = p;
+    [...priorityChips.children].forEach(c => c.setAttribute('aria-pressed', String(c.dataset.p === p)));
+  }
+
+  priorityChips.addEventListener('click', (e) => {
+    const btn = e.target.closest('.priority-chip');
+    if (!btn) return;
+    setPriority(selectedPriority === btn.dataset.p ? '' : btn.dataset.p);
+  });
+
+  const units = [];
+  const unitTags = document.getElementById('unitTags');
+  const unitInput = document.getElementById('unitInput');
+
+  function renderUnits() {
+    unitTags.innerHTML = units.map((u, i) =>
+      `<span class="unit-tag">${u}<button data-i="${i}" type="button" aria-label="Remove ${u}">×</button></span>`
+    ).join('');
+  }
+
+  unitTags.addEventListener('click', (e) => {
+    const btn = e.target.closest('button[data-i]');
+    if (!btn) return;
+    units.splice(Number(btn.dataset.i), 1);
+    renderUnits();
+  });
+
+  unitInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && unitInput.value.trim()) {
+      e.preventDefault();
+      units.push(unitInput.value.trim().toUpperCase());
+      unitInput.value = '';
+      renderUnits();
+    }
+  });
+
+  const notesEl = document.getElementById('notes');
+  let lastAutoNotes = '';
+
+  callTypeSelect.addEventListener('change', () => {
+    const rc = RUN_CARDS.find(r => r.type === callTypeSelect.value);
+    if (!rc) return;
+
+    setPriority(rc.priority || '');
+
+    units.length = 0;
+    units.push(...rc.units);
+    renderUnits();
+
+    // Don't clobber notes the dispatcher already typed by hand.
+    if (!notesEl.value.trim() || notesEl.value === lastAutoNotes) {
+      notesEl.value = rc.notes || '';
+      lastAutoNotes = notesEl.value;
+    }
+  });
+
+  const sendBtn = document.getElementById('sendBtn');
+  const status = document.getElementById('status');
+  const addressEl = document.getElementById('address');
+
+  sendBtn.addEventListener('click', async () => {
+    const callType = callTypeSelect.value;
+    const address = addressEl.value.trim();
+    const notes = notesEl.value.trim();
+
+    if (!callType) {
+      status.textContent = 'Pick a call type.';
+      status.className = 'err';
+      return;
+    }
+    if (!address) {
+      status.textContent = 'Address is required.';
+      status.className = 'err';
+      return;
+    }
+
+    sendBtn.disabled = true;
+    status.textContent = 'Sending...';
+    status.className = '';
+
+    try {
+      const res = await fetch('/.netlify/functions/send-alert', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: callType, priority: selectedPriority, address, notes, units })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to send');
+
+      status.textContent = 'Alert sent to Discord.';
+      status.className = 'ok';
+      callTypeSelect.value = '';
+      addressEl.value = '';
+      notesEl.value = '';
+      lastAutoNotes = '';
+      units.length = 0;
+      renderUnits();
+      setPriority('');
+    } catch (err) {
+      status.textContent = 'Error: ' + err.message;
+      status.className = 'err';
+    } finally {
+      sendBtn.disabled = false;
+    }
+  });
+</script>
+
+</body>
+</html>

@@ -1,0 +1,10 @@
+{
+  "name": "fire-alert",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Dispatch entry page + Discord bot alerting for Blain County Fire",
+  "dependencies": {
+    "firebase-admin": "^12.7.0",
+    "tweetnacl": "^1.0.3"
+  }
+}
