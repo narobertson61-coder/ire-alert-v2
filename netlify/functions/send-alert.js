@@ -33,18 +33,21 @@ exports.handler = async (event) => {
     return { statusCode: 400, body: JSON.stringify({ error: 'type and address are required' }) };
   }
 
-  const db = getDb();
-
-  // Create the call record first so we have an ID to embed in the button.
-  const callRef = await db.collection('calls').add({
-    type,
-    priority: priority || '',
-    address,
-    notes: notes || '',
-    units: Array.isArray(units) ? units : [],
-    responders: [],
-    createdAt: admin.firestore.FieldValue.serverTimestamp(),
-  });
+  // Log the call to Firestore for a record, but Discord posting no longer
+  // depends on this succeeding first.
+  try {
+    const db = getDb();
+    await db.collection('calls').add({
+      type,
+      priority: priority || '',
+      address,
+      notes: notes || '',
+      units: Array.isArray(units) ? units : [],
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
+  } catch (err) {
+    console.error('Failed to log call to Firestore', err);
+  }
 
   const embed = {
     title: priority ? `${type.toUpperCase()} — ${priority}` : type.toUpperCase(),
@@ -53,24 +56,9 @@ exports.handler = async (event) => {
       { name: 'Address', value: address },
       ...(Array.isArray(units) && units.length ? [{ name: 'Units', value: units.join(', ') }] : []),
       ...(notes ? [{ name: 'Notes', value: notes }] : []),
-      { name: 'Responding', value: '_No one yet_' },
     ],
     timestamp: new Date().toISOString(),
   };
-
-  const components = [
-    {
-      type: 1,
-      components: [
-        {
-          type: 2,
-          style: 4, // danger (red)
-          label: 'Responding',
-          custom_id: `respond_${callRef.id}`,
-        },
-      ],
-    },
-  ];
 
   const discordRes = await fetch(
     `https://discord.com/api/v10/channels/${process.env.DISCORD_CHANNEL_ID}/messages`,
@@ -80,7 +68,11 @@ exports.handler = async (event) => {
         Authorization: `Bot ${process.env.DISCORD_BOT_TOKEN}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ embeds: [embed], components }),
+      body: JSON.stringify({
+        content: process.env.DISCORD_ROLE_ID ? `<@&${process.env.DISCORD_ROLE_ID}>` : undefined,
+        embeds: [embed],
+        allowed_mentions: { parse: ['roles'] },
+      }),
     }
   );
 
@@ -89,5 +81,5 @@ exports.handler = async (event) => {
     return { statusCode: 502, body: JSON.stringify({ error: `Discord error: ${errText}` }) };
   }
 
-  return { statusCode: 200, body: JSON.stringify({ ok: true, callId: callRef.id }) };
+  return { statusCode: 200, body: JSON.stringify({ ok: true }) };
 };
