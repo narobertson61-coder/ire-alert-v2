@@ -33,6 +33,8 @@ exports.handler = async (event) => {
     return { statusCode: 400, body: JSON.stringify({ error: 'type and address are required' }) };
   }
 
+  const unitsList = Array.isArray(units) ? units : [];
+
   // Log the call to Firestore for a record, but Discord posting no longer
   // depends on this succeeding first.
   try {
@@ -42,11 +44,27 @@ exports.handler = async (event) => {
       priority: priority || '',
       address,
       notes: notes || '',
-      units: Array.isArray(units) ? units : [],
+      units: unitsList,
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
     });
   } catch (err) {
     console.error('Failed to log call to Firestore', err);
+  }
+
+  // Push the same call to the MDTs — they listen on mdt_calls/active.
+  try {
+    const db = getDb();
+    await db.collection('mdt_calls').doc('active').set({
+      active: true,
+      type,
+      priority: priority || '',
+      address,
+      notes: notes || '',
+      units: unitsList,
+      timestamp: admin.firestore.FieldValue.serverTimestamp(),
+    });
+  } catch (err) {
+    console.error('Failed to push call to MDTs', err);
   }
 
   const embed = {
@@ -54,7 +72,7 @@ exports.handler = async (event) => {
     color: COLOR_BY_PRIORITY[priority] || DEFAULT_COLOR,
     fields: [
       { name: 'Address', value: address },
-      ...(Array.isArray(units) && units.length ? [{ name: 'Units', value: units.join(', ') }] : []),
+      ...(unitsList.length ? [{ name: 'Units', value: unitsList.join(', ') }] : []),
       ...(notes ? [{ name: 'Notes', value: notes }] : []),
     ],
     timestamp: new Date().toISOString(),
